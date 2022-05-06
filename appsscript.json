@@ -4,8 +4,7 @@
     "libraries": [{
       "userSymbol": "aprj",
       "libraryId": "1dBkRDJJmvgnof3ziRbpJTDJInMmHxv63Xyp_I56hyYDEM0SErLryQDIU",
-      "version": "0",
-      "developmentMode": true
+      "version": "11"
     }]
   },
   "exceptionLogging": "STACKDRIVER",
@@ -21,6 +20,12 @@
     }, {
       "menuName": "Untitled a",
       "functionName": "Untitleda"
+    }, {
+      "menuName": "Untitled macro",
+      "functionName": "Untitledmacro"
+    }, {
+      "menuName": "Untitled macro 1",
+      "functionName": "Untitledmacro1"
     }]
   }
 }

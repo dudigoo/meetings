@@ -8,7 +8,7 @@ function onOpen() {
       .addItem('Sort recur by teacher', 'sortRecurByTeacher')
       .addItem('Sort recur by time', 'sortRecurByTime')
       .addItem('Report absence', 'ReportAbsence')
-      .addItem('Filter selected teacher', 'filterTeacher')
+      .addItem('Student details', 'studentDetails')
       .addItem('Update daily sheets', 'aprj.updateShibSheets')
       .addToUi();
 }
@@ -17,7 +17,7 @@ function fmt_dmy_date(dt){
   let res=dt.replace(/^(\d+)[\/\.](\d+)[\/\.](\d+)/, "$2/$1/$3");
   return res;
 }
-
+/*
 function filterTeacher(){
   let sh=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   let val = sh.getSelection().getCurrentCell().getValue();
@@ -25,6 +25,30 @@ function filterTeacher(){
   let filt=rng.createFilter();
   let fc=SpreadsheetApp.newFilterCriteria().whenTextEqualTo(val);
   filt.setColumnFilterCriteria(3,fc);
+}*/
+
+function studentDetails(){
+  aprj.collectParams();
+  let sh=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  let val = sh.getSelection().getCurrentCell().getValue();
+  let stu_ar=aprj.getStuAr(val);
+  Logger.log('stu details:'+stu_ar);
+  let msg;
+  if (!stu_ar){
+  msg='Student not found: '+val+'. Select a student cell';
+  } else {
+    msg='Student: '+val+ ' grade: '+stu_ar[0]+' class: '+stu_ar[3]+'\nMobile: '+stu_ar[4];
+    let query='select * where B="'+stu_ar[0]+stu_ar[3]+'"';
+    let shnm='מדריכי פנימיה';
+    let wrkr=aprj.querySheet(query, aprj.gp.wrkrs_ss_id,shnm,1);
+    Logger.log('wrkr:'+JSON.stringify( wrkr));
+    for (let i=0;i<wrkr.length;i++){
+      msg= msg+ '\n'+wrkr[i][0]+' : '+wrkr[i][3] + ' : '+wrkr[i][2];
+      Logger.log('loop:'+wrkr[i][0]+' : '+wrkr[i][3] + ' : '+wrkr[i][2]);
+    }
+    Logger.log('msg:'+msg);
+  }
+  SpreadsheetApp.getUi().alert(msg);
 }
 
 function ReportAbsence(){

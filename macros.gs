@@ -1,6 +1,6 @@
 function Untitleda() {
   var spreadsheet = SpreadsheetApp.getActive();
-  spreadsheet.getRange('A4').activate();
+  spreadsheet.getRange('B12').activate();
   //spreadsheet.getActiveRangeList().setFontColor('#000000');
-  spreadsheet.getActiveRangeList().setFontColor('#d9d9d9');
+  spreadsheet.getActiveRangeList().setFontColor('#999999');
 };
