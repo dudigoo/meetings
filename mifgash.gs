@@ -1,5 +1,5 @@
-var dowmap={'0':'א', '1':'ב', '2':'ג', '3':'ד', '4':'ה','5':'ו','6':'ז'};
-var dmy_fmt='y';
+//var dowmap={'0':'א', '1':'ב', '2':'ג', '3':'ד', '4':'ה','5':'ו','6':'ז'};
+//var dmy_fmt='y';
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
@@ -9,13 +9,13 @@ function onOpen() {
       .addItem('Sort recur by time', 'sortRecurByTime')
       .addItem('Report absence', 'ReportAbsence')
       .addItem('Student details', 'studentDetails')
-      .addItem('Update daily sheets', 'aprj.updateShibSheets')
+      .addItem('Update current date sheet', 'aprj.updateShibCurrSheet')
+      .addItem('Update allDays sheet', 'aprj.updateAllDatesSheetMain')
       .addToUi();
 }
 
-function fmt_dmy_date(dt){
-  let res=dt.replace(/^(\d+)[\/\.](\d+)[\/\.](\d+)/, "$2/$1/$3");
-  return res;
+function tst(){
+  aprj.tstIsDtInRange();
 }
 /*
 function filterTeacher(){
@@ -25,6 +25,15 @@ function filterTeacher(){
   let filt=rng.createFilter();
   let fc=SpreadsheetApp.newFilterCriteria().whenTextEqualTo(val);
   filt.setColumnFilterCriteria(3,fc);
+}
+
+function updateShibCurrSheet(){
+  aprj.collectParams();
+  let shnm=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getName();
+  Logger.log('shnm='+shnm);
+  aprj.gp.shib_dates=aprj.getDtStrFromShNm(shnm);
+  Logger.log('gp.shib_dates='+aprj.gp.shib_dates);
+  aprj.shibutzDates();
 }*/
 
 function studentDetails(){
@@ -53,8 +62,40 @@ function studentDetails(){
 
 function ReportAbsence(){
   aprj.collectParams();
+  let res=iterateSelectedRanges('absence');
+  let rows2push=res[0];
+  let errs=res[1];
+  aprj.appendRows2Maakav(rows2push);
+  if (errs.length){
+    SpreadsheetApp.getUi().alert(errs.join('\n'));
+  }  
+}
+
+function cpToRecur(){
+  aprj.collectParams();
+
+  let dt=aprj.getDtStrFromShNm(SpreadsheetApp.getActiveSheet().getName());
+  let dt1= aprj.getDtObj(dt);
+  if (isNaN(dt1)){
+    let ui = SpreadsheetApp.getUi();
+    ui.alert('Can not copy from this sheet to recur');
+    return;
+  }
+  aprj.shib_cur_sheet_dow=aprj.dowmap[dt1.getDay()];
+  let res=iterateSelectedRanges('cp2recur');
+  let rows2push=res[0];
+  let errs=res[1];
+  let torow=aprj.getRecurSh().getLastRow()+1;
+  Logger.log('rows2push ='+JSON.stringify(rows2push));
+  //Logger.log('ar='+ar+' torow='+torow+' ar.length='+ar.length);
+  aprj.getRecurSh().getRange(torow,1,rows2push.length,rows2push[0].length).setValues(rows2push);
+}
+
+function iterateSelectedRanges(type){
   let sh=SpreadsheetApp.getActiveSheet();
+
   let red='#ea4335';
+
   let errs=[];
   let selection = sh.getSelection();
   let ranges =  selection.getActiveRangeList().getRanges();
@@ -67,22 +108,34 @@ function ReportAbsence(){
     let rng_errs=[]
     //Logger.log('selected Range: ' + ranges[i].getA1Notation() +' r1='+r1);
     for (let r=0; r< ranges[i].getNumRows(); r++) {
-      doRngRow(sh,rngcols,rng_ar,r,r1,offset,rows2push,rng_errs);
-    }
-    if (rng_errs.length){
-      errs=errs.concat(rng_errs);
-    } else {
-      ranges[i].setFontColor(red);
+      let selrow_ar=sh.getRange(r1+r,1,1,17).getValues();
+      if (type=='absence'){
+        doRngRowAbs(sh,rngcols,rng_ar,r,r1,offset,rows2push,rng_errs,selrow_ar);
+        if (rng_errs.length){
+          errs=errs.concat(rng_errs);
+        } else {
+          ranges[i].setFontColor(red);
+        }
+      } else {//cp2recur
+        doRngRowRecur(sh,rngcols,rng_ar,r,r1,offset,rows2push,rng_errs,selrow_ar);
+        if (rng_errs.length){
+          errs=errs.concat(rng_errs);
+        }
+      }
     }
   }
-  aprj.appendRows2Maakav(rows2push);
-  if (errs.length){
-    SpreadsheetApp.getUi().alert(errs.join('\n'));
-  }
+  return [rows2push,errs];
 }
 
-function doRngRow(sh,rngcols,rng_ar,r,r1,offset,rows2push,errs){
-      let selrow_ar=sh.getRange(r1+r,1,1,17).getValues();
+function doRngRowRecur(sh,rngcols,rng_ar,r,r1,offset,rows2push,errs,selrow_ar){
+  Logger.log('selrow_ar='+JSON.stringify(selrow_ar));
+  let vals=[aprj.shib_cur_sheet_dow].concat(selrow_ar[0].slice(0,3)).concat(selrow_ar[0].slice(4,15)).concat(['קבוע']);
+  rows2push.push(vals);
+  sh.getRange(r1+r,16).setValue('קבוע');
+
+}
+
+function doRngRowAbs(sh,rngcols,rng_ar,r,r1,offset,rows2push,errs,selrow_ar){
       //Logger.log(' row='+selrow_ar);
       let acti = 'חיסור ידני משיבוץ';
       let atd = 'לא הגיע';
@@ -112,50 +165,16 @@ function doRngRow(sh,rngcols,rng_ar,r,r1,offset,rows2push,errs){
       }
 }
 
-function cpToRecur(){
-  let sh=SpreadsheetApp.getActiveSheet();
-  let dt=sh.getName().replace(/^\d./,'');
-  if (dmy_fmt){
-    //Logger.log('bdt='+dt);
-    dt=fmt_dmy_date(dt);
-    //Logger.log('edt='+dt);
-  }
-  let dt1= new Date(dt);
-  if (isNaN(dt1) || sh.getTabColor() == '#1129e9'){
-    let ui = SpreadsheetApp.getUi();
-    ui.alert('Can not copy from this sheet: '+sh.getName());
-    return;
-  }
-  //Logger.log('dt='+dt+' dt1='+dt1+'dt1.getDate()='+dt1.getDate());
-  let row=sh.getActiveRange().getRow();
-  let vals=sh.getRange(row,1,1,15).getValues()[0];
-  //Logger.log('row='+row+' vals='+vals);
-  let pvals=[dowmap[dt1.getDay()]];
-  let rcd=addToRecur(pvals.concat(vals.slice(0,3)).concat(vals.slice(4).concat(['קבוע'])));
-  sh.getRange(row,16,1,1).setValue('קבוע');
-}
-
-function getRecurSh(){
-  return SpreadsheetApp.getActiveSpreadsheet().getSheetByName('recur');
-}
-
-function addToRecur(flds_ar){
-  let rsh=getRecurSh();
-  let lrow=rsh.getLastRow();
-  //Logger.log('lrow='+lrow+' arr len='+flds_ar.length);
-  //Logger.log('flds_ar='+flds_ar);
-  rsh.insertRowAfter(lrow);
-  rsh.getRange(lrow+1,1,1,16).setValues([flds_ar]);
-}
-
 function sortRecurByTeacher() {
-  let sh = getRecurSh();
+  aprj.collectParams();
+  let sh = aprj.getRecurSh();
   let lrow=sh.getLastRow()
   sh.getRange(2,1,lrow-1,16).sort([{column: 4, ascending: true}, {column: 1, ascending: true}, {column: 2, ascending: true}]);
 }
 
 function sortRecurByTime() {
-  let sh = getRecurSh();
+  aprj.collectParams();
+  let sh = aprj.getRecurSh();
   let lrow=sh.getLastRow()
   sh.getRange(2,1,lrow-1,16).sort([{column: 1, ascending: true}, {column: 2, ascending: true}, {column: 4, ascending: true}]);
 }

@@ -1,31 +1,44 @@
 {
-  "timeZone": "America/New_York",
+  "timeZone": "Asia/Jerusalem",
   "dependencies": {
-    "libraries": [{
-      "userSymbol": "aprj",
-      "libraryId": "1dBkRDJJmvgnof3ziRbpJTDJInMmHxv63Xyp_I56hyYDEM0SErLryQDIU",
-      "version": "11"
-    }]
+    "libraries": [
+      {
+        "userSymbol": "aprj",
+        "libraryId": "1dBkRDJJmvgnof3ziRbpJTDJInMmHxv63Xyp_I56hyYDEM0SErLryQDIU",
+        "version": "0",
+        "developmentMode": true
+      }
+    ]
   },
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
   "sheets": {
-    "macros": [{
-      "menuName": "Untitled macro",
-      "functionName": "Untitledmacro"
-    }, {
-      "menuName": "ReportAbsence",
-      "functionName": "ReportAbsence",
-      "defaultShortcut": "Ctrl+Alt+Shift+1"
-    }, {
-      "menuName": "Untitled a",
-      "functionName": "Untitleda"
-    }, {
-      "menuName": "Untitled macro",
-      "functionName": "Untitledmacro"
-    }, {
-      "menuName": "Untitled macro 1",
-      "functionName": "Untitledmacro1"
-    }]
+    "macros": [
+      {
+        "menuName": "Untitled macro",
+        "functionName": "Untitledmacro"
+      },
+      {
+        "menuName": "ReportAbsence",
+        "functionName": "ReportAbsence",
+        "defaultShortcut": "Ctrl+Alt+Shift+1"
+      },
+      {
+        "menuName": "Untitled a",
+        "functionName": "Untitleda"
+      },
+      {
+        "menuName": "Untitled macro",
+        "functionName": "Untitledmacro"
+      },
+      {
+        "menuName": "Untitled macro 1",
+        "functionName": "Untitledmacro1"
+      },
+      {
+        "menuName": "Untitled macro",
+        "functionName": "Untitledmacro"
+      }
+    ]
   }
 }
