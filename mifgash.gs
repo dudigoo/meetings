@@ -1,40 +1,26 @@
-//var dowmap={'0':'א', '1':'ב', '2':'ג', '3':'ד', '4':'ה','5':'ו','6':'ז'};
-//var dmy_fmt='y';
+var permanent="קבוע";
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('More')
+      .addItem('Worker recur', 'aprj.flagPermanentMeetings')
       .addItem('Copy to recur', 'cpToRecur')
-      .addItem('Sort recur by teacher', 'sortRecurByTeacher')
-      .addItem('Sort recur by time', 'sortRecurByTime')
-      .addItem('Report absence', 'ReportAbsence')
-      .addItem('Student details', 'studentDetails')
+      .addItem('Update current DOW sheets', 'aprj.updateDayOfWeekSheetsMain')
+      .addItem('---', '***')
       .addItem('Update current date sheet', 'aprj.updateShibCurrSheet')
+      .addItem('Student details', 'studentDetails')
+      .addItem('Report absence', 'ReportAbsence')
+      .addItem('Copy to recur & update DOWs', 'cpToRecurAndDOWs')
+      .addItem('---', '***')
+      .addItem('Update next 5 days', 'aprj.update5ShibSheetsFrom2Main')
+      .addItem('Update all sheets from next day', 'aprj.updateShibSheetsFrom2Main')
+      .addItem('Update **all** sheets', 'aprj.updateShibSheetsMain')
+      .addItem('Color current sheet window rows', 'aprj.ColorCurrentSheetWindowRows')
+      .addItem('Email error report', 'aprj.findAllGroupsSchedMistakesMain')
       .addItem('Update allDays sheet', 'aprj.updateAllDatesSheetMain')
+      .addItem('Update blocked students', 'aprj.updateShibBlockedStudentListsMain')
       .addToUi();
 }
-
-function tst(){
-  aprj.tstIsDtInRange();
-}
-/*
-function filterTeacher(){
-  let sh=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  let val = sh.getSelection().getCurrentCell().getValue();
-  let rng=sh.getRange('A:Q');
-  let filt=rng.createFilter();
-  let fc=SpreadsheetApp.newFilterCriteria().whenTextEqualTo(val);
-  filt.setColumnFilterCriteria(3,fc);
-}
-
-function updateShibCurrSheet(){
-  aprj.collectParams();
-  let shnm=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getName();
-  Logger.log('shnm='+shnm);
-  aprj.gp.shib_dates=aprj.getDtStrFromShNm(shnm);
-  Logger.log('gp.shib_dates='+aprj.gp.shib_dates);
-  aprj.shibutzDates();
-}*/
 
 function studentDetails(){
   aprj.collectParams();
@@ -44,10 +30,10 @@ function studentDetails(){
   Logger.log('stu details:'+stu_ar);
   let msg;
   if (!stu_ar){
-  msg='Student not found: '+val+'. Select a student cell';
+    msg='Student not found: '+val+'. Select a student cell';
   } else {
-    msg='Student: '+val+ ' grade: '+stu_ar[0]+' class: '+stu_ar[3]+'\nMobile: '+stu_ar[4];
-    let query='select * where B="'+stu_ar[0]+stu_ar[3]+'"';
+    msg='Student: '+val+ ' Grade: '+stu_ar[0]+' Group: '+stu_ar[3]+'\nMobile: '+stu_ar[4]+'\nMath: '+stu_ar[15]+'\nEnglish: '+stu_ar[16]+'\nLang: '+stu_ar[17]+'\nNote: '+stu_ar[18];
+    let query='select * where B starts with "'+stu_ar[0]+stu_ar[3]+'"';
     let shnm='מדריכי פנימיה';
     let wrkr=aprj.querySheet(query, aprj.gp.wrkrs_ss_id,shnm,1);
     Logger.log('wrkr:'+JSON.stringify( wrkr));
@@ -56,6 +42,27 @@ function studentDetails(){
       Logger.log('loop:'+wrkr[i][0]+' : '+wrkr[i][3] + ' : '+wrkr[i][2]);
     }
     Logger.log('msg:'+msg);
+  }
+  SpreadsheetApp.getUi().alert(msg);
+}
+
+
+function wrkrRecur(){
+  aprj.collectParams();
+  let sh  = SpreadsheetApp.getActiveSheet();
+  let dow=aprj.dowmap[aprj.getDtObjFromTabNm(SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getName()).getDay()];
+  let selection  = sh.getSelection();
+  let row=selection.getActiveRangeList().getRanges()[0].getRow();
+  //let msg=sh.getRange(row,3,1,1).getValue();
+  //let msg=ScriptApp.getService().getUrl();
+  //SpreadsheetApp.getUi().alert(msg);
+  //return;
+  let qry="select B,C,D where A='"+dow+"' and B='" +frtm+"' and D='"+wrkr+"'"; 
+  let vals = aprj.querySheet(qry, aprj.getShibutzSS(), 'recur', 1);
+  if (! vals){
+    msg='Teacher not found for this date/time';
+  } else {
+    msg='Teacher found for this date/time';
   }
   SpreadsheetApp.getUi().alert(msg);
 }
@@ -71,10 +78,11 @@ function ReportAbsence(){
   }  
 }
 
+
 function cpToRecur(){
   aprj.collectParams();
-
-  let dt=aprj.getDtStrFromShNm(SpreadsheetApp.getActiveSheet().getName());
+  let this_shnm=SpreadsheetApp.getActiveSheet().getName();
+  let dt=aprj.getDtStrFromShNm(this_shnm);
   let dt1= aprj.getDtObj(dt);
   if (isNaN(dt1)){
     let ui = SpreadsheetApp.getUi();
@@ -86,9 +94,18 @@ function cpToRecur(){
   let rows2push=res[0];
   let errs=res[1];
   let torow=aprj.getRecurSh().getLastRow()+1;
-  Logger.log('rows2push ='+JSON.stringify(rows2push));
+  //Logger.log('rows2push ='+JSON.stringify(rows2push));
   //Logger.log('ar='+ar+' torow='+torow+' ar.length='+ar.length);
   aprj.getRecurSh().getRange(torow,1,rows2push.length,rows2push[0].length).setValues(rows2push);
+  return this_shnm;
+}
+
+
+function cpToRecurAndDOWs(){
+  let this_shnm=cpToRecur();
+  if (this_shnm){
+    aprj.updateDOWSheetsMain(this_shnm);
+  }
 }
 
 function iterateSelectedRanges(type){
@@ -110,14 +127,14 @@ function iterateSelectedRanges(type){
     for (let r=0; r< ranges[i].getNumRows(); r++) {
       let selrow_ar=sh.getRange(r1+r,1,1,17).getValues();
       if (type=='absence'){
-        doRngRowAbs(sh,rngcols,rng_ar,r,r1,offset,rows2push,rng_errs,selrow_ar);
+        doRngRowAbs(sh,rngcols,rng_ar,r,offset,rows2push,rng_errs,selrow_ar);
         if (rng_errs.length){
           errs=errs.concat(rng_errs);
         } else {
           ranges[i].setFontColor(red);
         }
       } else {//cp2recur
-        doRngRowRecur(sh,rngcols,rng_ar,r,r1,offset,rows2push,rng_errs,selrow_ar);
+        doRngRowRecur(sh,r,r1,rows2push,selrow_ar);
         if (rng_errs.length){
           errs=errs.concat(rng_errs);
         }
@@ -127,15 +144,16 @@ function iterateSelectedRanges(type){
   return [rows2push,errs];
 }
 
-function doRngRowRecur(sh,rngcols,rng_ar,r,r1,offset,rows2push,errs,selrow_ar){
-  Logger.log('selrow_ar='+JSON.stringify(selrow_ar));
-  let vals=[aprj.shib_cur_sheet_dow].concat(selrow_ar[0].slice(0,3)).concat(selrow_ar[0].slice(4,15)).concat(['קבוע']);
+function doRngRowRecur(sh,r,r1,rows2push,selrow_ar){
+  //Logger.log('selrow_ar='+JSON.stringify(selrow_ar));
+  let vals=[aprj.shib_cur_sheet_dow].concat(selrow_ar[0].slice(0,3)).concat(selrow_ar[0].slice(4,15)).concat([permanent]);
   rows2push.push(vals);
-  sh.getRange(r1+r,16).setValue('קבוע');
+  sh.getRange(r1+r,16).setValue(permanent);
+  sh.getRange(r1+r,6).setValue(aprj.setPermanentComment(sh.getRange(r1+r,6).getValue()));
 
 }
 
-function doRngRowAbs(sh,rngcols,rng_ar,r,r1,offset,rows2push,errs,selrow_ar){
+function doRngRowAbs(sh,rngcols,rng_ar,r,offset,rows2push,errs,selrow_ar){
       //Logger.log(' row='+selrow_ar);
       let acti = 'חיסור ידני משיבוץ';
       let atd = 'לא הגיע';
@@ -169,14 +187,14 @@ function sortRecurByTeacher() {
   aprj.collectParams();
   let sh = aprj.getRecurSh();
   let lrow=sh.getLastRow()
-  sh.getRange(2,1,lrow-1,16).sort([{column: 4, ascending: true}, {column: 1, ascending: true}, {column: 2, ascending: true}]);
+  sh.getRange(2,1,lrow-1,23).sort([{column: 4, ascending: true}, {column: 1, ascending: true}, {column: 2, ascending: true}]);
 }
 
 function sortRecurByTime() {
   aprj.collectParams();
   let sh = aprj.getRecurSh();
   let lrow=sh.getLastRow()
-  sh.getRange(2,1,lrow-1,16).sort([{column: 1, ascending: true}, {column: 2, ascending: true}, {column: 4, ascending: true}]);
+  sh.getRange(2,1,lrow-1,23).sort([{column: 1, ascending: true}, {column: 2, ascending: true}, {column: 4, ascending: true}]);
 }
 
 

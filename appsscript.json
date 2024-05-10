@@ -1,17 +1,24 @@
 {
   "timeZone": "Asia/Jerusalem",
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
   "dependencies": {
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "Drive",
+        "serviceId": "drive",
+        "version": "v2"
+      }
+    ],
     "libraries": [
       {
         "userSymbol": "aprj",
         "libraryId": "1dBkRDJJmvgnof3ziRbpJTDJInMmHxv63Xyp_I56hyYDEM0SErLryQDIU",
-        "version": "0",
-        "developmentMode": true
+        "version": "49",
+        "developmentMode": false
       }
     ]
   },
-  "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
   "sheets": {
     "macros": [
       {
